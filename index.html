@@ -1,1 +1,32 @@
-Hello World!
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1,maximum-scale=1,user-scalable=no">
+  <script type="text/javascript" src="static/nebulas.js"></script>
+  <script type="text/javascript" src="static/nebPay.js"></script>
+  <script type="text/javascript">
+    var HttpRequest = require("nebulas").HttpRequest;
+    var Neb = require("nebulas").Neb;
+    var Account = require("nebulas").Account;
+    var Transaction = require("nebulas").Transaction;
+    var Unit = require("nebulas").Unit;
+    var neb = new Neb();
+    neb.setRequest(new HttpRequest("https://testnet.nebulas.io"));
+    var account, tx, txhash;
+
+    var NebPay = require("nebpay");
+    var nebPay = new NebPay();    
+    var serialNumber; //交易序列号
+    var intervalQuery; //定时查询交易结果
+  </script>
+</head>
+
+<body>
+  <div id="app">
+    
+  </div> 
+</body>
+
+</html>
