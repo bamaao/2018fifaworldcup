@@ -1,0 +1,13 @@
+<!DOCTYPE html><html><head><meta charset=UTF-8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><script type=text/javascript src=static/nebulas.js></script><script type=text/javascript src=static/nebPay.js></script><script type=text/javascript>var HttpRequest = require("nebulas").HttpRequest;
+    var Neb = require("nebulas").Neb;
+    var Account = require("nebulas").Account;
+    var Transaction = require("nebulas").Transaction;
+    var Unit = require("nebulas").Unit;
+    var neb = new Neb();
+    neb.setRequest(new HttpRequest("https://testnet.nebulas.io"));
+    var account, tx, txhash;
+
+    var NebPay = require("nebpay");
+    var nebPay = new NebPay();    
+    var serialNumber; //交易序列号
+    var intervalQuery; //定时查询交易结果</script><link href=/static/css/app.744417c09297149cf3fe8e84a4d03920.css rel=stylesheet></head><body><div id=app></div><script type=text/javascript src=/static/js/manifest.2ae2e69a05c33dfc65f8.js></script><script type=text/javascript src=/static/js/vendor.1a2f4ffec9d95159bc6d.js></script><script type=text/javascript src=/static/js/app.8c2d9b1ddecd30b95307.js></script></body></html>
