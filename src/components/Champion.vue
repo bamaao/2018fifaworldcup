@@ -126,7 +126,7 @@
 				<el-button type="primary" @click.native="startBetting">投注</el-button>
 			</el-col>
 			<el-col :span="5">
-				<el-button type="info">查看投注信息</el-button>
+				<el-button type="info" @click.native="stakeInfo">查看投注信息</el-button>
 			</el-col>
 		</el-row>
 	</el-row>
@@ -138,10 +138,11 @@
 	var intervalQuery
 
 	function funcIntervalQuery() {
-		nebPay.queryPayInfo(serialNumber, options)
+		nebPay.queryPayInfo(serialNumber)
 		.then(function(resp) {
 			console.log("tx result:" + resp)
 			var respObject = JSON.parse(resp)
+			console.log("respObject:" + respObject)
 			if(respObject.code === 0 && respObject.data.status === 1) {
 				clearInterval(intervalQuery)
 			}
@@ -149,6 +150,27 @@
 			console.log(err)
 		})
 	}
+
+	//return of search,
+    function cbSearch(resp) {
+        var result = resp.result    ////resp is an object, resp.result is a JSON string
+        console.log("return of rpc call: " + JSON.stringify(result))
+        if (result === 'null'){
+            console.log("null")
+        } else{
+            //if result is not null, then it should be "return value" or "error message"
+            try{
+                result = JSON.parse(result)
+            }catch (err){
+                //result is the error message
+            }
+            if (!!result.key){      //"return value"
+                
+            } else {        //"error message"
+               
+            }
+        }
+    }
 
     export default {
 		data() {
@@ -178,7 +200,40 @@
 				intervalQuery = setInterval(function() {
 					funcIntervalQuery()
 				}, 10000)
+			},
+			stakeInfo() {
+				var from = ""//"n1YWPrrSTrm1tWyELAppvQdk3Uwpkzd9s5V"
+				// console.log("address:" + AccAddress)
+				var dappAddress = "n1jLATdV8TWZJFca2cFtTaK67Xv7jYAYLuA"
+				var value = "0"
+				var nonce = "0"
+				var gas_price = "1000000"
+        		var gas_limit = "2000000"
+				var callFunction = "getStakeInfos"
+				var callArgs = '["' + this.champion + '"]'
+				var contract = {
+					"function": callFunction,
+					"args": callArgs
+				}
+				neb.api.call(from,dappAddress,value,nonce,gas_price,gas_limit,contract).then(function (resp) {
+		            cbSearch(resp)
+		        }).catch(function (err) {
+		            //cbSearch(err)
+		            console.log("error:" + err.message)
+		        })
 			}
+			// startBetting() {
+			// 	var to = "n1jLATdV8TWZJFca2cFtTaK67Xv7jYAYLuA"
+			// 	var value = this.input
+			// 	var callFunction = "stake"
+			// 	var callArgs = '["' + this.champion + '"]'
+			// 	nebPay.call(to, value, callFunction, callArgs, {
+			// 		qrcode: {
+			// 			showQRCode: false
+			// 		},
+			// 		listener: showMessage
+			// 	})
+			// }
 		}
 	}
 	
