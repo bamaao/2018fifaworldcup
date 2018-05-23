@@ -3,6 +3,10 @@
 		<el-row>
 			<center><h2>世界杯冠军竞猜</h2></center>
 		</el-row>
+		<el-row>
+			<center>合约地址：n1qbsVpyecievtX11VJS8Xc1mo2xBaM7W52</center>
+			<center>返奖率：99%</center>
+		</el-row>
 		<el-row :gutter="20">
 			<el-col :span="5">
 				<el-radio v-model="champion" label="BAR" border>巴西</el-radio>
@@ -118,17 +122,39 @@
 		</el-row>
 		<br/>
 		</br/>
-		<el-row :gutter="20">
+		<el-row :gutter="20" v-show="betShow">
 			<el-col :span="5">
 				<el-input v-model="input" placeholder="请输入投注额度(NAS)"></el-input>
 			</el-col>
 			<el-col :span="5">
-				<el-button type="primary" @click.native="startBetting">投注</el-button>
-			</el-col>
-			<el-col :span="5">
-				<el-button type="info" @click.native="stakeInfo">查看投注信息</el-button>
+				<el-button type="primary" @click.native="dialogVisible = true">投注</el-button>
 			</el-col>
 		</el-row>
+		<el-row :gutter="20">
+			<el-col :span="5">
+				<el-input v-model="nasAddress" placeholder="请输入钱包地址"></el-input>
+			</el-col>
+			<el-col :span="5">
+				<el-button type="primary" @click.native="stakeInfo">查看投注信息</el-button>
+			</el-col>
+			<el-col :span="5">
+				<el-button type="primary" @click.native="settleInfo" v-show="settleShow">查看中奖信息</el-button>
+			</el-col>
+			<el-col :span="5">
+				<el-button type="primary" @click.native="settle" v-show="settleShow">结算</el-button>
+			</el-col>
+		</el-row>
+		<el-row :gutter="20">
+			<el-col :span="5">{{message}}</el-col>
+		</el-row>
+
+		<el-dialog title="提示" :visible.sync="dialogVisible" width="30%" :before-close="handleClose">
+		  <span>确认投注?</span>
+		  <span slot="footer" class="dialog-footer">
+		    <el-button @click="dialogVisible = false">取 消</el-button>
+		    <el-button type="primary" @click="startBetting">确 定</el-button>
+		  </span>
+		</el-dialog>
 	</el-row>
   
 </template>
@@ -137,24 +163,10 @@
 	var serialNumber
 	var intervalQuery
 
-	function funcIntervalQuery() {
-		nebPay.queryPayInfo(serialNumber)
-		.then(function(resp) {
-			console.log("tx result:" + resp)
-			var respObject = JSON.parse(resp)
-			console.log("respObject:" + respObject)
-			if(respObject.code === 0 && respObject.data.status === 1) {
-				clearInterval(intervalQuery)
-			}
-		}).catch(function(err) {
-			console.log(err)
-		})
-	}
-
 	//return of search,
     function cbSearch(resp) {
         var result = resp.result    ////resp is an object, resp.result is a JSON string
-        console.log("return of rpc call: " + JSON.stringify(result))
+        //console.log("return of rpc call: " + JSON.stringify(result))
         if (result === 'null'){
             console.log("null")
         } else{
@@ -174,66 +186,167 @@
 
     export default {
 		data() {
-			var now = new Date().getTime();
-			
-
-			// var account = Account.NewAccount()
-
 			return {
+				nasAddress: '',
 				champion: 'BAR',
-				input: 0.1
+				input: 0.1,
+				betShow: false,
+				settleShow: false,
+				dialogVisible: false,
+				message: ''
 			}
 		},
-
+		mounted: function() {//Init
+			var self = this
+			var from = "n1S4drtbKWkSFSEk77Mjym2Vb9D6FJcBzWf"
+			var dappAddress = ContractAddress
+			var value = "0"
+			var nonce = "0"
+			var gas_price = "1000000"
+        	var gas_limit = "2000000"
+			var callFunction = "info"
+			var callArgs = '[]'
+			var contract = {
+				"function": callFunction,
+				"args": callArgs
+			}
+			neb.api.call(from,dappAddress,value,nonce,gas_price,gas_limit,contract).then(function (resp) {
+		        var result = resp.result
+		        console.log("详细信息:" + result)
+		        if(result === 'null') {
+		        	//this.$message(resp)
+		        }else {
+			        try{
+	                	result = JSON.parse(result)
+	                	
+	                	var now = new Date().getTime();
+	                	if(now < result.beginTimestamp) {
+	                		self.betShow = true
+	                	}
+	                	if(result.isOutcomeSet) {
+	                		if(now > result.deadline) {
+	                			self.settleShow = false
+	                		}else {
+	                			self.settleShow = true
+	                		}
+	                		self.champion = result.outcome;
+	                	}
+	            	}catch (err){
+	            		//this.$message(err)
+		            }
+			    }
+		    }).catch(function (err) {
+		        //this.$message(err)
+		    })
+		},
 		methods: {
 			startBetting() {
-				// this.input = 
-				// this.champion = 
-				var to = "n1jLATdV8TWZJFca2cFtTaK67Xv7jYAYLuA"
-				var value = this.input
-				var callFunction = "stake"
-				var callArgs = '["' + this.champion + '"]'
+				var self = this
+				this.dialogVisible = false
+				var to = ContractAddress
+				console.log("result:" + isNaN(this.input))
+				if(!isNaN(this.input)) {
+					var value = Number(this.input)
+					if(value > 0) {
+						var callFunction = "stake"
+						var callArgs = '["' + this.champion + '"]'
+						var options = {
+							callback: NebPay.config.testnetUrl
+						}
+						serialNumber = nebPay.call(to, value,callFunction, callArgs, options)
+						intervalQuery = setInterval(function() {
+							self.funcInterval()
+						}, 10000)
+					} 
+				}else {
+					this.$message("无效的投注额!")
+				}
+			},
+			funcInterval() {
+				var self = this;
+				nebPay.queryPayInfo(serialNumber).then(function(resp) {
+					//console.log("tx result:" + resp)
+					var respObject = JSON.parse(resp)
+					//console.log("respObject:" + respObject)
+					if(respObject.code === 0 && respObject.data.status === 1) {
+						clearInterval(intervalQuery)
+						self.$message("成功!")
+					}
+				}).catch(function(err) {
+					console.log(err)
+				})
+			},
+			settle() {
+				var self = this
+				var to = ContractAddress
+				var value = "0"
+				var callFunction = "settle"
+				var callArgs = '[]'
 				var options = {
 					callback: NebPay.config.testnetUrl
 				}
 				serialNumber = nebPay.call(to, value,callFunction, callArgs, options)
 				intervalQuery = setInterval(function() {
-					funcIntervalQuery()
+					self.funcInterval()
 				}, 10000)
 			},
 			stakeInfo() {
-				var from = ""//"n1YWPrrSTrm1tWyELAppvQdk3Uwpkzd9s5V"
-				// console.log("address:" + AccAddress)
-				var dappAddress = "n1jLATdV8TWZJFca2cFtTaK67Xv7jYAYLuA"
-				var value = "0"
-				var nonce = "0"
-				var gas_price = "1000000"
-        		var gas_limit = "2000000"
-				var callFunction = "getStakeInfos"
-				var callArgs = '["' + this.champion + '"]'
-				var contract = {
-					"function": callFunction,
-					"args": callArgs
+				var self = this
+				var from = this.nasAddress
+				if(Account.isValidAddress(from)) {
+					// console.log("address:" + AccAddress)
+					var dappAddress = ContractAddress
+					var value = "0"
+					var nonce = "0"
+					var gas_price = "1000000"
+	        		var gas_limit = "2000000"
+					var callFunction = "getStakeInfos"
+					var callArgs = '["' + this.champion + '"]'
+					var contract = {
+						"function": callFunction,
+						"args": callArgs
+					}
+					neb.api.call(from,dappAddress,value,nonce,gas_price,gas_limit,contract).then(function (resp) {
+						//console.log("result:" + resp.result)
+			            //self.$message(resp.result)
+			            self.message = resp.result
+			        }).catch(function (err) {
+			            console.log("error:" + err.message)
+			        })
+				}else {
+					this.$message("无效的钱包地址!")
 				}
-				neb.api.call(from,dappAddress,value,nonce,gas_price,gas_limit,contract).then(function (resp) {
-		            cbSearch(resp)
-		        }).catch(function (err) {
-		            //cbSearch(err)
-		            console.log("error:" + err.message)
-		        })
+			},
+			settleInfo() {
+				var self = this
+				var from = this.nasAddress
+				if(Account.isValidAddress(from)) {
+					// console.log("address:" + AccAddress)
+					var dappAddress = ContractAddress
+					var value = "0"
+					var nonce = "0"
+					var gas_price = "1000000"
+	        		var gas_limit = "2000000"
+					var callFunction = "getAwardAmount"
+					var callArgs = '[]'
+					var contract = {
+						"function": callFunction,
+						"args": callArgs
+					}
+					neb.api.call(from,dappAddress,value,nonce,gas_price,gas_limit,contract).then(function (resp) {
+						//console.log("result:" + resp.result)
+			            //self.$message(resp.result)
+			            self.message = resp.result
+			        }).catch(function (err) {
+			            console.log("error:" + err.message)
+			        })
+				}else {
+					this.$message("无效的钱包地址!")
+				}
+			},
+			handleClose(done) {
+				this.$confirm('确认关闭?').then(_ => {this.stakeInfo()}).catch(_ => {})
 			}
-			// startBetting() {
-			// 	var to = "n1jLATdV8TWZJFca2cFtTaK67Xv7jYAYLuA"
-			// 	var value = this.input
-			// 	var callFunction = "stake"
-			// 	var callArgs = '["' + this.champion + '"]'
-			// 	nebPay.call(to, value, callFunction, callArgs, {
-			// 		qrcode: {
-			// 			showQRCode: false
-			// 		},
-			// 		listener: showMessage
-			// 	})
-			// }
 		}
 	}
 	

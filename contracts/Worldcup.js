@@ -164,9 +164,11 @@ WorldcupChampionContract.prototype = {
 			throw new Error("Time Has Not Arrived.");
 		}
 		if(this.owner == Blockchain.transaction.from) {
-			this.outcome = _country;
-			this._isOutcomeSet = true;
-			this.reportTimestamp = Blockchain.transaction.timestamp * 1000;
+			if(!this._isOutcomeSet) {
+				this.outcome = _country;
+				this._isOutcomeSet = true;
+				this.reportTimestamp = Blockchain.transaction.timestamp * 1000;
+			}
 		}else {
 			throw new Error("Invalid reporter.");
 		}
@@ -194,9 +196,11 @@ WorldcupChampionContract.prototype = {
 		}
 
 		var stake = this.stakeOwners.get(from + '_' + this.outcome);
+		var result = 0;
 		if(stake) {
 			if(stake.isSettled) {
 				//TODO
+				result = stake.settleAmount;
 			}else {
 				var settleAmount = new BigNumber(this.stakeAmount).mul(new BigNumber("0.99")).mul(stake.amount).dividedBy(this.stakeAmountMap.get(this.outcome));
 				Blockchain.transfer(from, settleAmount);
@@ -205,10 +209,11 @@ WorldcupChampionContract.prototype = {
 				this.stakeOwners.put(from + '_' + this.outcome, stake);
 				var this_total = new BigNumber(this.total);
 				this.total = this_total.minus(settleAmount);
+				result = settleAmount;
 			}
 			
 		}
-		return true;
+		return result;
 
 	},
 	getAwardAmount: function() {//获取奖励金额
@@ -257,8 +262,18 @@ WorldcupChampionContract.prototype = {
 			return this.reportTimestamp + 2 * 30 * 24 * 60 * 60 * 1000;//报告时间加60天
 		}
 		return 0;
+	},
+	info: function() {
+		var result = {};
+		result.beginTimestamp = this.beginTimestamp;
+		result.isOutcomeSet = this._isOutcomeSet;
+		if(this._isOutcomeSet) {
+			result.outcome = this.outcome;
+			result.deadline = this.getDeadline();
+		}
+		return result;
 	}
 };
 
 module.exports = WorldcupChampionContract;
-//n1jLATdV8TWZJFca2cFtTaK67Xv7jYAYLuA
+//n1qbsVpyecievtX11VJS8Xc1mo2xBaM7W52
