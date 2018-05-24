@@ -223,7 +223,7 @@ WorldcupChampionContract.prototype = {
 				if(stake.isSettled) {
 					return stake.settleAmount;
 				}else {
-					return new BigNumber(this.stakeAmount).mul(new BigNumber("0.99")).mul(stake.amount).dividedBy(this.stakeAmountMap(this.outcome));
+					return new BigNumber(this.stakeAmount).mul(new BigNumber("0.99")).mul(stake.amount).dividedBy(this.stakeAmountMap.get(this.outcome));
 				}
 			}
 		}

@@ -4,8 +4,10 @@
 			<center><h2>世界杯冠军竞猜</h2></center>
 		</el-row>
 		<el-row>
-			<center>合约地址：n1qbsVpyecievtX11VJS8Xc1mo2xBaM7W52</center>
-			<center>返奖率：99%</center>
+			<center>合约地址：n1tdMPtZKbe3kz2scUzepZT6KcymkHSPUgU</center>
+			<center>返奖率：99%，有效期为公开结果后60天内</center>
+			<center>只支持https://github.com/ChengOrangeJu/WebExtensionWallet</center>
+			<center>投注截止北京时间218年6月14日23点整</center>
 		</el-row>
 		<el-row :gutter="20">
 			<el-col :span="5">
